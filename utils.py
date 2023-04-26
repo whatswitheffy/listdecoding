@@ -27,7 +27,7 @@ def generateBitErrors(vector, num_errors):
 
     return error_vector
 
-def generateBitVec(length) -> NDArray:
+def generateRandomBitVec(length) -> NDArray:
     return np.array([random.randint(0, 1) for _ in range(length)])
 
 def pickRandomSubset(set, size):
