@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 from numpy.typing import NDArray
 from reedMuller import FirstOrderReedMuller
-from utils import hammingDistNormalized, pickRandomSubset, generateBitVec, generateBitErrors
+from utils import hammingDistNormalized, pickRandomSubset, generateRandomBitVec, generateBitErrors
 
 
 class TensorProductCode:
@@ -38,7 +38,7 @@ class TensorProductCode:
             D, T_success = self._phase2(R, eps, S, B, S_success)
             E, U_success = self._phase3(R, eps, D, T_success)
             C = self._phase4(E, U_success).flatten()
-            # print(hammingDistNormalized(C.flatten(), R.flatten()), self.eta - 3 * eps)
+            # print(hammingDistNormalized(C, receivedWord), self.eta - 3 * eps)
             if hammingDistNormalized(C, receivedWord) <= self.eta - 3 * eps:
                 L.append(C)
 
@@ -55,7 +55,7 @@ class TensorProductCode:
         B = np.zeros((max(S) + 1, self.code1.n))
         S_success = []
         for s in S:
-            L_s = self.code1.listDecode(R[s, :], eps)
+            L_s = self.code1.listDecode(R[s, :], 1 - self.eta / self.code1.delta)
             found = next((c for c in L_s if (c[T] == A[s, T]).all()), None)
             if found is not None:
                 B[s, :] = found
@@ -66,7 +66,7 @@ class TensorProductCode:
         D = np.zeros((self.code2.n, self.code1.n))
         T_success = []
         for t in range(self.code1.n):
-            L_t = self.code2.listDecode(R[:, t])
+            L_t = self.code2.listDecode(R[:, t], 1 - self.eta / self.code2.delta)
             found = next(
                 (c for c in L_t 
                  if hammingDistNormalized(c[S_success], B[S_success, t]) < eps * len(S)
@@ -82,7 +82,7 @@ class TensorProductCode:
         E = np.zeros((self.code2.n, self.code1.n))
         U_success = []
         for s in range(self.code2.n):
-            L_s = self.code1.listDecode(R[s, :])
+            L_s = self.code1.listDecode(R[s, :], 1 - self.eta / self.code1.delta)
             found = next(
                 (c for c in L_s 
                  if hammingDistNormalized(c[T_success], D[s, T_success]) < eps * self.code1.n
@@ -102,21 +102,21 @@ class TensorProductCode:
 
 
 if __name__ == "__main__":
-    rm1 = FirstOrderReedMuller(3)
-    rm2 = FirstOrderReedMuller(3)
+    rm1 = FirstOrderReedMuller(4)
+    rm2 = FirstOrderReedMuller(4)
 
     product = TensorProductCode(rm1, rm2)
 
-    message = generateBitVec(product.k)
+    message = generateRandomBitVec(product.k)
     print("MESSAGE: ", message)
 
     word = product.encode(message)
     print("ENCODED: ", word, " | LEN: ", len(word))
 
-    w_err = generateBitErrors(word, 0)
+    w_err = generateBitErrors(word, 60)
     print("ERRORED: ", w_err)
 
-    decoded_list = product.listDecode(w_err, 0.01)
+    decoded_list = product.listDecode(w_err, 0.001)
     print("DECODED: ") 
     for decoded in decoded_list:
         print(decoded)
