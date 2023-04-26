@@ -59,7 +59,9 @@ class FirstOrderReedMuller:
         dist2 = hammingDist(c2[uncorruptedPositions], receivedWord[uncorruptedPositions])
         return c1 if dist1 < dist2 else c2
 
-    def listDecode(self, receivedWord: NDArray, eps=0.5) -> list[NDArray]:
+    def listDecode(self, receivedWord: NDArray, eps=None) -> list[NDArray]:
+        if eps is None:
+            eps = 2 * ((self.d - 2) / 2) / self.d
         T = (1 - eps) * self.d
 
         L = [[0] * (2 ** self.m), [int(i / (2 ** (self.m - 1)) % 2) for i in range(2 ** self.m)]]
